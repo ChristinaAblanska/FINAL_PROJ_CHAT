@@ -29,6 +29,8 @@ private final AuthenticationProvider authenticationProvider;
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/login").permitAll()
                         .requestMatchers("/register").permitAll()
+                        .requestMatchers("/chat-docs").permitAll()
+//                        .requestMatchers("/swagger-ui-chat-docs").permitAll()
                         //ALL THE REST AUTHENTICATION REQUIRED
                         .anyRequest().authenticated())
                 .httpBasic(withDefaults())

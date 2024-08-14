@@ -5,6 +5,11 @@ import com.example.chat.dto.UserRequest;
 import com.example.chat.enumeration.UserStatus;
 import com.example.chat.service.EventHandlerService;
 import com.example.chat.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,6 +37,11 @@ public class AuthController {
     private final EventHandlerService eventHandlerService;
     private final CustomAuthenticationProvider customAuthenticationProvider;
 
+//    @Operation(summary = "User login")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "Successfully login",
+//                    content = { @Content(mediaType = "application/json",
+//                            schema = @Schema(implementation = String.class)) })
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestParam("username") String username,
                                 @RequestParam("password") String password,
