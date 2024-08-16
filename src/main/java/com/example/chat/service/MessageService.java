@@ -26,10 +26,10 @@ public class MessageService {
     public void create(ChatDTO chatDTO, String fromUser, MessageStatus status, LocalDateTime timestamp) {
         User sender = userService.getUserByUserName(fromUser);
         User receiver = userService.getUserByUserName(chatDTO.userName());
-        logger.info("Request to DB: create new message to userName: {}", receiver.getUserName());
         messageRepository.save(chatDTO.messageContent(), sender.getId(), receiver.getId(), status, timestamp);
     }
 
+//    Returns a list of all messages with status PENDING for the user with the given userName
     public List<Message> getAllPendingTo(String userName) {
         try {
             User user = userService.getUserByUserName(userName);
@@ -40,6 +40,7 @@ public class MessageService {
         }
     }
 
+//    Updates the status and the timestamp of a message
     public void updateMessage(long messageId, MessageStatus status, LocalDateTime timestamp) {
         messageRepository.updateMessageById(messageId, status.toString(), timestamp);
     }

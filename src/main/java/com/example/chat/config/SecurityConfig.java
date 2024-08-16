@@ -6,7 +6,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 
 import static org.springframework.security.config.Customizer.withDefaults;
@@ -27,8 +29,7 @@ private final AuthenticationProvider authenticationProvider;
                 .authorizeHttpRequests(authorize -> authorize
                         //DEFINE PUBLIC ENDPOINTS IF ANY
                         .requestMatchers("/public/**").permitAll()
-                        .requestMatchers("/login").permitAll()
-                        .requestMatchers("/register").permitAll()
+                        .requestMatchers("/swagger-ui-chat-docs.html").permitAll()
                         .requestMatchers("/chat-docs").permitAll()
 //                        .requestMatchers("/swagger-ui-chat-docs").permitAll()
                         //ALL THE REST AUTHENTICATION REQUIRED

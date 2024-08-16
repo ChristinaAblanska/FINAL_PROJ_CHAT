@@ -1,6 +1,6 @@
 package com.example.chat.dto;
 
-import com.example.chat.validation.UniqueUserName;
+import com.example.chat.validation.ValidPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 
@@ -13,10 +13,9 @@ public record UserRequest(
         @Email
         String email,
         @NotNull
-        @UniqueUserName
         String userName,
         @NotNull
-//        @ValidPassword
+        @ValidPassword
         String password
 ) {
         public UserRequest withEncodedPass(String encodedPass) {

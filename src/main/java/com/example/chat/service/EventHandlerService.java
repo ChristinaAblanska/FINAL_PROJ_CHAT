@@ -1,5 +1,6 @@
 package com.example.chat.service;
 
+import com.example.chat.controller.AuthController;
 import com.example.chat.dto.ChatDTO;
 import com.example.chat.dto.EmailDTO;
 import com.example.chat.dto.UserDTO;
@@ -13,7 +14,11 @@ import com.example.chat.model.Message;
 import com.example.chat.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -33,11 +38,15 @@ public class EventHandlerService {
     private static final AtomicInteger ID_Counter = new AtomicInteger(1);
     public static final long DEFAULT_TIMEOUT = Long.MAX_VALUE;
     private final Set<UserDTO> loggedInUsers = new HashSet<>();
+    private static final Logger logger = LoggerFactory.getLogger(EventHandlerService.class);
 
     private final UserService userService;
     private final MessageService messageService;
     private final EmailService emailService;
 
+    // Creates a new SseEmiiter
+    // On success - adds a user to the list of ONLINE users to be able to receive a message and sends all PENDING messages
+    // On error, On timeout - removes the user from the list of ONLINE users
     public SseEmitter registerUser(String userName) {
         SseEmitter sseEmitter = new SseEmitter(DEFAULT_TIMEOUT);
         UserDTO userDTO = new UserDTO(sseEmitter, userName);
@@ -48,35 +57,24 @@ public class EventHandlerService {
 
         loggedInUsers.add(userDTO);
         userService.updateStatus(userName, UserStatus.ONLINE);
-        sendWelcomeToClient(userDTO);
+//        sendWelcomeToClient(userDTO);
 
         List<Message> pendingMessages = messageService.getAllPendingTo(userDTO.userName());
         if (!pendingMessages.isEmpty()) {
             sendAllPending(pendingMessages, userDTO);
         }
 
-        log.info("New user logged in: {}", userDTO.userName());
+        logger.info("New user logged in: {}", userDTO.userName());
         return sseEmitter;
     }
 
+//    Removes the user from the list of ONLINE users and sets their status to OFFLINE
     private void removeAndLogError(UserDTO userDTO) {
-        log.info("Error during communication. The user {} is not logged in!", userDTO.userName());
+        logger.info("Error during communication. The user {} is not logged in!", userDTO.userName());
+        userService.updateStatus(userDTO.userName(), UserStatus.OFFLINE);
         loggedInUsers.remove(userDTO);
     }
 
-    private void sendWelcomeToClient(UserDTO userDTO) {
-        WelcomeEvent welcomeEvent = new WelcomeEvent(userDTO.userName());
-        sendMessage(userDTO, welcomeEvent);
-    }
-
-
-//    public void broadcast(ChatDTO chatDTO) {
-//        Set<UserDTO> users = Set.copyOf(loggedInUsers);
-//        for (UserDTO user : users) {
-//            ChatEvent chatEvent = new ChatEvent(chatDTO.messageContent(), chatDTO.userName());
-//            sendMessage(user, chatEvent);
-//        }
-//    }
 
     public void sendAllPending(List<Message> pendingMessages, UserDTO userDTO) {
         for (Message message : pendingMessages) {
@@ -86,6 +84,9 @@ public class EventHandlerService {
         }
     }
 
+//    Checks if the user is in the list of logged in (ONLINE) users
+//    if yes - sends the message
+//    if no - stores the message as PENDING
     public boolean sendMsg(ChatDTO chatDTO, String sender) {
         boolean sent = false;
         if (!userService.existsByUserName(chatDTO.userName())) {
@@ -95,6 +96,7 @@ public class EventHandlerService {
         for (UserDTO user : users) {
             if (user.userName().equals(chatDTO.userName())) {
                 ChatEvent chatEvent = new ChatEvent(chatDTO.messageContent(), chatDTO.userName());
+                logger.info("Notify user {} for a new message", user.userName());
                 sendMessage(user, chatEvent);
                 messageService.create(chatDTO, sender, MessageStatus.SENT, LocalDateTime.now());
                 sent = true;
@@ -104,6 +106,7 @@ public class EventHandlerService {
         return sent;
     }
 
+//    Stores the message as PENDING
     public void storeMsgForLater(ChatDTO chatDTO, String sender) {
         messageService.create(chatDTO, sender, MessageStatus.PENDING, LocalDateTime.now());
         User user = userService.getUserByUserName(chatDTO.userName());
@@ -116,13 +119,12 @@ public class EventHandlerService {
         EmailDTO emailDTO = new EmailDTO("You have new pending message", user.getEmail(), body);
         emailService.sendSimpleEmail(emailDTO);
 
-        log.info("Message stored as PENDING for userName: {}", chatDTO.userName());
+        logger.info("Message stored as PENDING for userName: {}", chatDTO.userName());
     }
 
     private void sendMessage(UserDTO userDTO, CommunicationsEvent communicationsEvent) {
         SseEmitter sseEmitter = userDTO.sseEmitter();
         try {
-            log.info("Notify user {}", userDTO.userName());
             int eventID = ID_Counter.incrementAndGet();
             SseEmitter.SseEventBuilder eventBuilder = event().name(communicationsEvent.getEventType())
                     .id(String.valueOf(eventID))
@@ -134,14 +136,39 @@ public class EventHandlerService {
     }
 
     public boolean handleMessage(String userName, ChatDTO chatDTO) {
-        User user = userService.getUserByUserName(chatDTO.userName());
+        User user;
         boolean sent = false;
-        if (user.getStatus().equals(UserStatus.ONLINE)) {
-            sent = sendMsg(chatDTO, userName);
-        }
-        if (!sent) {
-            storeMsgForLater(chatDTO,userName);
+        try {
+            user = userService.getUserByUserName(chatDTO.userName());
+
+            if (user.getStatus().equals(UserStatus.ONLINE)) {
+                sent = sendMsg(chatDTO, userName);
+            }
+            if (!sent) {
+                storeMsgForLater(chatDTO,userName);
+            }
+        } catch (Exception e) {
+            if (e instanceof EmptyResultDataAccessException) {
+                throw new UsernameNotFoundException("You are trying to send a message to a not existing user!");
+            }
         }
         return sent;
     }
 }
+
+//    public boolean handleMessage(String userName, ChatDTO chatDTO) {
+//        User user = userService.getUserByUserName(chatDTO.userName());
+//        boolean sent = false;
+//        if (user.getStatus().equals(UserStatus.ONLINE)) {
+//            sent = sendMsg(chatDTO, userName);
+//        }
+//        if (!sent) {
+//            storeMsgForLater(chatDTO,userName);
+//        }
+//        return sent;
+//    }
+//}
+//    private void sendWelcomeToClient(UserDTO userDTO) {
+//        WelcomeEvent welcomeEvent = new WelcomeEvent(userDTO.userName());
+//        sendMessage(userDTO, welcomeEvent);
+//    }

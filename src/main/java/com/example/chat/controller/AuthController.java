@@ -10,8 +10,11 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +22,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,19 +34,21 @@ import java.security.Principal;
 
 @RestController
 @RequiredArgsConstructor
-@Slf4j
+@Validated
 public class AuthController {
     private final AuthenticationProvider authenticationProvider;
     private final UserService userService;
     private final EventHandlerService eventHandlerService;
     private final CustomAuthenticationProvider customAuthenticationProvider;
 
-//    @Operation(summary = "User login")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Successfully login",
-//                    content = { @Content(mediaType = "application/json",
-//                            schema = @Schema(implementation = String.class)) })
-    @PostMapping("/login")
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
+    @Operation(summary = "User login")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful login",
+                    content = { @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)) })})
+    @PostMapping("/public/login")
     public ResponseEntity<String> login(@RequestParam("username") String username,
                                 @RequestParam("password") String password,
                                 HttpSession session) {
@@ -54,18 +60,29 @@ public class AuthController {
         return new ResponseEntity<>("redirect:/chat", HttpStatus.OK);
     }
 
-    @PostMapping(value = "/register", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> create(@RequestBody UserRequest userRequest) {
+    @Operation(summary = "User registration")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful registration",
+                    content = { @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)) })})
+    @PostMapping(value = "/public/register", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> create(@Valid @RequestBody UserRequest userRequest) {
         String encodedPass = customAuthenticationProvider.getPasswordEncoder().encode(userRequest.password());
         userRequest = userRequest.withEncodedPass(encodedPass);
+        logger.info("New user created, username: {}", userRequest.userName());
         userService.create(userRequest);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @Operation(summary = "User logout")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful logout",
+                    content = { @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class)) })})
     @PostMapping("/api/v1/logout")
     public ResponseEntity<String> logout(Principal principal) {
         SecurityContextHolder.clearContext();
-        log.info("User {} logged out", principal.getName());
+        logger.info("User {} logged out", principal.getName());
         userService.updateStatus(principal.getName(), UserStatus.OFFLINE);
 
         return new ResponseEntity<>("redirect:/home", HttpStatus.OK);

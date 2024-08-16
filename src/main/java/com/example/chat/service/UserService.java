@@ -9,6 +9,8 @@ import com.example.chat.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -17,7 +19,6 @@ public class UserService {
     private final UserRepository userRepository;
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    //    private final PasswordEncoder passwordEncoder;
     public User getById(long id) {
         User user = userRepository.getById(id);
         if (user == null) {

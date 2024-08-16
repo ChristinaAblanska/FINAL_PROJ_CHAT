@@ -25,7 +25,7 @@ class AuthControllerTest {
 
     @Test
     void givenCorrectCredentials_whenLoginIn_ThenRedirectToChat() throws Exception {
-                this.mockMvc.perform(post("/login")
+                this.mockMvc.perform(post("/public/login")
                         .param("username", "Kate")
                         .param("password", "password")).andDo(print())
                 .andExpect(status().isOk());
@@ -38,7 +38,7 @@ class AuthControllerTest {
     void givenCorrectDetails_whenCreatingANewUser_ThenReturnCreatedStatus() throws Exception {
         UserRequest userRequest = new UserRequest("Stella", "Artois",
                 "stella.Artois@gmail.com", "StellA", "password");
-        this.mockMvc.perform(post("/register")
+        this.mockMvc.perform(post("/public/register")
                         .content(objectMapper.writeValueAsString(userRequest))
                         .contentType(MediaType.APPLICATION_JSON)).andDo(print())
                 .andExpect(status().isCreated());

@@ -23,6 +23,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler{
         return new ResponseEntity<String>(businessNotFound.getMessage(), HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(UserNotFound.class)
+    public ResponseEntity<String> BusinessNotFoundHandler(UserNotFound userNotFound) {
+        return new ResponseEntity<String>(userNotFound.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> RuntimeExceptionHandler(RuntimeException runtimeException) {
         return new ResponseEntity<String>(runtimeException.getMessage(), HttpStatus.BAD_REQUEST);
