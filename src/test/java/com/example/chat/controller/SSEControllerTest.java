@@ -29,7 +29,7 @@ class SSEControllerTest {
 
     @Test
     @WithMockUser("Kate")
-    void givenCorrectReceiver_whenSendingMessage_thenMessageSentReturned() throws Exception {
+    void givenValidOnlineReceiver_whenSendingMessage_thenMessageSentReturned() throws Exception {
         eventHandlerService.registerUser("johnSmith");
         ChatDTO chatDTO = new ChatDTO("Hello, John2222222!", "johnSmith");
         this.mockMvc.perform(post("/api/v1/message")
@@ -37,5 +37,27 @@ class SSEControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                 ).andDo(print())
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser("Kate")
+    void givenValidOfflineReceiver_whenSendingMessage_thenMessageStoredAsPending() throws Exception {
+        ChatDTO chatDTO = new ChatDTO("Hello, Simo!", "Simo");
+        this.mockMvc.perform(post("/api/v1/message")
+                        .content(objectMapper.writeValueAsString(chatDTO))
+                        .contentType(MediaType.APPLICATION_JSON)
+                ).andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser("Kate")
+    void givenInValidReceiver_whenSendingMessage_thenMessageNotSent() throws Exception {
+        ChatDTO chatDTO = new ChatDTO("Hello, Lisa!", "Lisa");
+        this.mockMvc.perform(post("/api/v1/message")
+                        .content(objectMapper.writeValueAsString(chatDTO))
+                        .contentType(MediaType.APPLICATION_JSON)
+                ).andDo(print())
+                .andExpect(status().isNotFound());
     }
 }

@@ -16,18 +16,9 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import java.util.LinkedHashMap;
 import java.util.List;
+
 @ControllerAdvice
-public class GlobalExceptionHandler extends ResponseEntityExceptionHandler{
-    @ExceptionHandler(BusinessNotFound.class)
-    public ResponseEntity<String> BusinessNotFoundHandler(BusinessNotFound businessNotFound) {
-        return new ResponseEntity<String>(businessNotFound.getMessage(), HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(UserNotFound.class)
-    public ResponseEntity<String> BusinessNotFoundHandler(UserNotFound userNotFound) {
-        return new ResponseEntity<String>(userNotFound.getMessage(), HttpStatus.NOT_FOUND);
-    }
-
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> RuntimeExceptionHandler(RuntimeException runtimeException) {
         return new ResponseEntity<String>(runtimeException.getMessage(), HttpStatus.BAD_REQUEST);
@@ -40,15 +31,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler{
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<String> UsernameNotFoundExceptionHandler(UsernameNotFoundException usernameNotFoundException) {
-        return new ResponseEntity<String>(usernameNotFoundException.getMessage(), HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<String>(usernameNotFoundException.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(BusinessNotFound.class)
+    public ResponseEntity<String> BusinessNotFoundHandler(BusinessNotFound businessNotFound) {
+        return new ResponseEntity<String>(businessNotFound.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         List<ObjectError> errors = ex.getBindingResult().getAllErrors();
         LinkedHashMap<String, String> validationErrors = new LinkedHashMap<>();
-        for (ObjectError error: errors) {
-            validationErrors.put(((FieldError)error).getField(), error.getDefaultMessage());
+        for (ObjectError error : errors) {
+            validationErrors.put(((FieldError) error).getField(), error.getDefaultMessage());
         }
         return new ResponseEntity<>(validationErrors, HttpStatus.BAD_REQUEST);
     }

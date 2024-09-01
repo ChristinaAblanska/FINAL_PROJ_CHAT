@@ -6,10 +6,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -29,9 +29,6 @@ private final AuthenticationProvider authenticationProvider;
                 .authorizeHttpRequests(authorize -> authorize
                         //DEFINE PUBLIC ENDPOINTS IF ANY
                         .requestMatchers("/public/**").permitAll()
-                        .requestMatchers("/swagger-ui-chat-docs.html").permitAll()
-                        .requestMatchers("/chat-docs").permitAll()
-//                        .requestMatchers("/swagger-ui-chat-docs").permitAll()
                         //ALL THE REST AUTHENTICATION REQUIRED
                         .anyRequest().authenticated())
                 .httpBasic(withDefaults())
@@ -41,6 +38,15 @@ private final AuthenticationProvider authenticationProvider;
                 .csrf(csrf -> csrf.disable());
 
         return http.build();
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring()
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/h2-console/**"))
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/swagger-ui/**"))
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/swagger-ui-chat-docs.html"))
+                .requestMatchers(AntPathRequestMatcher.antMatcher(" /chat-docs/**"));
     }
 
 }

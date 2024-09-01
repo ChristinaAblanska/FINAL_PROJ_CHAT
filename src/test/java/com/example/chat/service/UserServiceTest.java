@@ -3,12 +3,12 @@ package com.example.chat.service;
 import com.example.chat.dto.UserRequest;
 import com.example.chat.dto.UserResponse;
 import com.example.chat.enumeration.UserStatus;
-import com.example.chat.errorHandling.BusinessNotFound;
 import com.example.chat.model.User;
 import com.example.chat.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,13 +36,21 @@ class UserServiceTest {
     }
 
     @Test
+    void givenInValidId_whenGettingUserById_thenReturnNull() {
+        long id = user.getId();
+
+        User userById = userService.getById(id);
+        assertNull(userById);
+    }
+
+    @Test
     void givenInValidId_whenGettingUserById_thenExceptionThrown() {
         long id = user.getId();
         Mockito.when(userRepository.getById(id)).thenReturn(null);
-        BusinessNotFound exception = assertThrows(BusinessNotFound.class, () -> userService.getById(id));
-        String expectedMessage = "User with id: " + id + " not found!";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
+
+        Mockito.when(userRepository.getById(id)).thenThrow(RuntimeException.class);
+        assertThrows(Exception.class,
+                () -> userService.getById(id));
     }
 
     @Test
@@ -55,14 +63,19 @@ class UserServiceTest {
     }
 
     @Test
+    void givenInValidUserName_whenGettingUserByUserName_thenReturnNULL() {
+        String userName = user.getUserName();
+
+        User userByUserName = userService.getUserByUserName(userName);
+        assertNull(userByUserName);
+    }
+
+    @Test
     void givenInValidUserName_whenGettingUserByUserName_thenExceptionThrown() {
         String userName = user.getUserName();
-        Mockito.when(userRepository.getByUserName(userName)).thenReturn(null);
-        BusinessNotFound exception = assertThrows(BusinessNotFound.class,
+        Mockito.when(userRepository.getByUserName(userName)).thenThrow(RuntimeException.class);
+        assertThrows(Exception.class,
                 () -> userService.getUserByUserName(userName));
-        String expectedMessage = "User with userName: " + userName + " not found!";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
     }
 
     @Test
@@ -79,7 +92,7 @@ class UserServiceTest {
     void givenInValidUserName_whenGettingUserResponseByUserName_thenExceptionThrown() {
         String userName = "InvalidUserName";
         Mockito.when(userRepository.getByUserName(userName)).thenReturn(null);
-        BusinessNotFound exception = assertThrows(BusinessNotFound.class,
+        UsernameNotFoundException exception = assertThrows(UsernameNotFoundException.class,
                 () -> userService.getUserResponseByUserName(userName));
         String expectedMessage = "User with userName: " + userName + " not found!";
         String actualMessage = exception.getMessage();
@@ -114,24 +127,6 @@ class UserServiceTest {
                 .updateStatusByUserName(userName, UserStatus.OFFLINE.name());
     }
 
-    @Test
-    void givenValidId_whenDeletingUserById_thenDeleteUser() {
-        long id = user.getId();
-        User expectedUser = user;
-        Mockito.when(userRepository.getById(id)).thenReturn(expectedUser);
-        userService.delete(id);
-        Mockito.verify(userRepository, Mockito.times(1)).delete(id);
-    }
-
-    @Test
-    void givenInValidId_whenDeletingUserById_thenExceptionThrown() {
-        long id = user.getId();
-        Mockito.when(userRepository.getById(id)).thenReturn(null);
-        BusinessNotFound exception = assertThrows(BusinessNotFound.class, () -> userService.getById(id));
-        String expectedMessage = "User with id: " + id + " not found!";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
-    }
 
     @Test
     void givenValidId_whenCheckingIfUserExistsById_thenReturnTRUE() {

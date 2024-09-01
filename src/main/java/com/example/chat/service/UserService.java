@@ -3,7 +3,6 @@ package com.example.chat.service;
 import com.example.chat.dto.UserRequest;
 import com.example.chat.dto.UserResponse;
 import com.example.chat.enumeration.UserStatus;
-import com.example.chat.errorHandling.BusinessNotFound;
 import com.example.chat.model.User;
 import com.example.chat.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,32 +19,44 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     public User getById(long id) {
-        User user = userRepository.getById(id);
-        if (user == null) {
-            BusinessNotFound businessNotFound = new BusinessNotFound("User with id: " + id + " not found!");
-            logger.error("Error: getById: Userid: {} not found!", id, businessNotFound);
-            throw businessNotFound;
+        User user;
+        try {
+            user = userRepository.getById(id);
+        } catch (Exception e) {
+            if (e instanceof EmptyResultDataAccessException) {
+                return null;
+            }
+            logger.error("Error: getById: Userid: {} not found!", id, e);
+            throw e;
         }
+
         return user;
     }
 
     public User getUserByUserName(String userName) {
-        User user = userRepository.getByUserName(userName);
-        if (user == null) {
-            BusinessNotFound businessNotFound = new BusinessNotFound("User with userName: " + userName + " not found!");
-            logger.error("Error: getById: userName: {} not found!", userName, businessNotFound);
-            throw businessNotFound;
+        User user;
+        try {
+            user = userRepository.getByUserName(userName);
+        } catch (Exception e) {
+            if (e instanceof EmptyResultDataAccessException) {
+                return null;
+            }
+            logger.error("Error: getUserByUserName: userName: {} not found!", userName, e);
+            throw e;
         }
+
         return user;
     }
 
     public UserResponse getUserResponseByUserName(String userName) {
         User user = userRepository.getByUserName(userName);
         if (user == null) {
-            BusinessNotFound businessNotFound = new BusinessNotFound("User with userName: " + userName + " not found!");
-            logger.error("Error: getUserResponseByUserName: userName: {} not found!", userName, businessNotFound);
-            throw businessNotFound;
+            UsernameNotFoundException usernameNotFoundException = new UsernameNotFoundException("User with userName: "
+                    + userName + " not found!");
+            logger.error("Error: getUserResponseByUserName: userName: {} not found!", userName, usernameNotFoundException);
+            throw usernameNotFoundException;
         }
+
         return new UserResponse(user.getFirstName(), user.getLastName(), user.getUserName(), user.getEmail());
     }
 
@@ -63,33 +74,15 @@ public class UserService {
         userRepository.updateStatusByUserName(userName, status.name());
     }
 
-    public void delete(long id) {
-        if (!existsById(id)) {
-            BusinessNotFound businessNotFound = new BusinessNotFound("User with id: " + id + " not found!");
-            logger.error("Error: deleteById: Userid: {} not found!", id, businessNotFound);
-            throw businessNotFound;
-        }
-        userRepository.delete(id);
-        logger.info("Request to DB: delete user with id: {}", id);
-    }
 
     public boolean existsById(long id) {
-        try {
             User user = getById(id);
             return user != null;
-        } catch (BusinessNotFound e) {
-            logger.error("Error: Userid: {} not found!", id, e);
-            return false;
-        }
     }
 
     public boolean existsByUserName(String userName) {
-        try {
-            UserResponse user = getUserResponseByUserName(userName);
+            User user = getUserByUserName(userName);
             return user != null;
-        } catch (BusinessNotFound e) {
-            logger.error("Error: UserName: {} not found!", userName, e);
-            return false;
-        }
     }
+
 }

@@ -92,4 +92,5 @@ public class UserRepository {
         User user = getByUserName(userName);
         return (user != null) || !user.isEmpty();
     }
+
 }

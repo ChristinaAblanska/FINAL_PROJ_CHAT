@@ -27,8 +27,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             );
     }
 
-//    Given valid userName - returns the user
-//    Given invalid userName - throws UsernameNotFoundException
     private User getUser(String username, User user) {
         try {
             user = userRepository.getByUserName(username);

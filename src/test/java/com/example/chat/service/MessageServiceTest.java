@@ -71,6 +71,17 @@ class MessageServiceTest {
     }
 
     @Test
+    void givenInValidUserName_whenGetAllPendingToUserName_thenReturnEmptyList() {
+        List<Message> expectedMessages = new ArrayList<>();
+        String userName = "InvalidUserName";
+
+        Mockito.when(userService.getUserByUserName(userName)).thenReturn(null);
+        Mockito.when(messageRepository.getAllPendingByReceiverId(receiver.getId())).thenReturn(expectedMessages);
+        List<Message> actualMessages = messageService.getAllPendingTo(receiver.getUserName());
+        assertEquals(expectedMessages, actualMessages);
+    }
+
+    @Test
     void updateMessage() {
         long id = 1L;
         LocalDateTime timestamp = LocalDateTime.now();

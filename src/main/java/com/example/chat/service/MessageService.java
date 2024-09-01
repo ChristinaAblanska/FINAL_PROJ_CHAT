@@ -1,7 +1,6 @@
 package com.example.chat.service;
 
 import com.example.chat.enumeration.MessageStatus;
-import com.example.chat.errorHandling.BusinessNotFound;
 import com.example.chat.model.Message;
 import com.example.chat.model.User;
 import com.example.chat.dto.ChatDTO;
@@ -29,18 +28,15 @@ public class MessageService {
         messageRepository.save(chatDTO.messageContent(), sender.getId(), receiver.getId(), status, timestamp);
     }
 
-//    Returns a list of all messages with status PENDING for the user with the given userName
     public List<Message> getAllPendingTo(String userName) {
-        try {
             User user = userService.getUserByUserName(userName);
+            if (user == null) {
+                logger.error("Error: userName: {} not found!", userName);
+                return new ArrayList<>();
+            }
             return messageRepository.getAllPendingByReceiverId(user.getId());
-        } catch (BusinessNotFound e) {
-            logger.error("Error: userName: {} not found!", userName, e);
-            return new ArrayList<>();
-        }
     }
 
-//    Updates the status and the timestamp of a message
     public void updateMessage(long messageId, MessageStatus status, LocalDateTime timestamp) {
         messageRepository.updateMessageById(messageId, status.toString(), timestamp);
     }
